@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+#=======================HEADER=======================================|
+#AUTOR
+# Jefferson 'slackjeff' Rocha <root@slackjeff.com.br>
+#
+#
+#====================================================================|
+
+#=====================VARIAVEIS
+prg='Genesis'
+version='1.0'
+# Color
+blue='\033[34;1m'
+end='\033[m'
+#=====================TESTES
+[[ "$UID" -ne '0' ]] && { echo "Only Root."; exit 1 ;}
+
+#=====================FUNCOES
+_ENTER()
+{
+	read -p 'ENTER FOR CONTINUE '
+	return 0
+}
+
+_LOGO()
+{
+	clear
+	echo -e "${blue}"
+	cat <<- 'EOF'
+         _____                      _     
+        |  __ \                    (_)    
+        | |  \/ ___ _ __   ___  ___ _ ___ 
+        | | __ / _ \ '_ \ / _ \/ __| / __|
+        | |_\ \  __/ | | |  __/\__ \ \__ \
+         \____/\___|_| |_|\___||___/_|___/
+                                  
+	EOF
+	echo -e "${end}"
+}
+
+_MENU()
+{
+	echo -e "\t+-----------------------------------+"
+	echo -e "\t| [1] - Lilo Secure                 |"
+	echo -e "\t| [2] -                             |"
+	echo -e "\t| [3] -                             |"
+	echo -e "\t+-----------------------------------+"
+	return 0
+
+}
+
+_LILO()
+{
+	# Variáveis Locais
+	local lilo_conf='/etc/lilo.conf'
+
+	if grep -o "mandatory" "$lilo_conf" &>/dev/null; then
+		echo "Your lilo have mandatory! Return MAIN."
+		_ENTER
+		return 0
+	fi
+	# Password no lilo
+	read -sp 'OK, Tell me your Password to use when loading lilo: ' password
+	echo
+	read -sp 'Repeat your Password: ' password2
+	echo
+	[[ "$password" != "$password" ]] && { echo "Passwords are different!"; _ENTER; return 0 ;}
+	if [[ -e "$lilo_conf" ]]; then
+		sed -i "/^image =.*/a mandatory" "$lilo_conf" || return 1
+		sed -i "/^image =.*/a password = $password" "$lilo_conf" || return 1
+		echo -e "Password and Mandatory ${blue}[OK]${end}"
+	fi
+	# Alterando permissão
+	chmod 600 "$lilo_conf" && { echo -e "Permission 600 for lilo ${blue}[OK]${end}"; lilo; _ENTER; return 0 ;}
+}
+
+
+#=====================PRINCIPAL
+while :; do
+	_LOGO
+	_MENU
+	read -p $'\nChoice: ' choice
+	case $choice in
+		1) _LILO || break ;;
+	esac
+done
